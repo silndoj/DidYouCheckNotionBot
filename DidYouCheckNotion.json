@@ -1,0 +1,242 @@
+{
+  "name": "DidYouCheckNotion",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "message"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C09MAB1HUBD",
+          "mode": "list",
+          "cachedResultName": "all-better42heilbronn"
+        },
+        "options": {}
+      },
+      "name": "Slack Trigger",
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1392,
+        32
+      ],
+      "id": "7721d596-0670-499a-b3fb-4e4e7632bf0a",
+      "webhookId": "4a566815-853c-4027-b76b-409ad3aff4e9",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "notesInFlow": false,
+      "credentials": {
+        "slackApi": {
+          "id": "YVcUwEje8JDutJuW",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "channelId",
+              "value": "={{ $json[\"channel\"] }}"
+            },
+            {
+              "name": "messageText",
+              "value": "={{ $json[\"text\"]}}"
+            },
+            {
+              "name": "ts",
+              "value": "={{ $json[\"ts\"]}}"
+            },
+            {
+              "name": "bot_id",
+              "value": "={{ $json[\"bot_id\"]}}"
+            },
+            {
+              "name": "subtype",
+              "value": "={{ $json[\"subtype\"]}}"
+            },
+            {
+              "name": "user",
+              "value": "={{ $json[\"user\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        32
+      ],
+      "id": "bd7b6e0a-730c-4729-9bfc-fef2c9aa7f61"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "07c94f70-b014-4903-8729-8fced79d110d",
+              "leftValue": "={{ $json.reply }}",
+              "rightValue": "none",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "IF have matches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        32
+      ],
+      "id": "2acebc7d-f945-4dbb-9db9-2905f41cb345"
+    },
+    {
+      "parameters": {
+        "jsCode": "/* global $json */\n\n\nconst text = ($json.messageText || \"\").trim();\nconst isFromBot = $json.bot_id || ($json.subtype && $json.subtype !== \"\");\n\nif (!text || isFromBot) {\n  return [];\n}\n\nreturn [{ json: $json }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        32
+      ],
+      "id": "6e2796c0-03e6-4cfd-859f-9b20f38a124e",
+      "name": "Guard",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://91.98.95.94:5000/respond",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{$json[\"messageText\"]}}\",\n  \"user\" : \"{{$json[\"user\"]}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        32
+      ],
+      "id": "8b077290-147d-4d7c-a79e-35f11ba99e03",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09MAB1HUBD",
+          "mode": "list",
+          "cachedResultName": "all-better42heilbronn"
+        },
+        "text": "=👋 <@{{$json[\"user\"]}}> 🧠 {{$json[\"reply\"]}}\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        -80
+      ],
+      "id": "ced72824-2daa-4224-bfbb-91938ed4780f",
+      "name": "Send a message",
+      "webhookId": "b586c2d6-7cc8-49eb-8817-f0cf8fd4227c",
+      "credentials": {
+        "slackApi": {
+          "id": "YVcUwEje8JDutJuW",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF have matches?": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Set fields": {
+      "main": [
+        [
+          {
+            "node": "Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "IF have matches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8f072e82-324f-4818-91df-df0511638176",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e244fd15423ae48bf404d936dbecde9b76d2b6fea541f2988768f178113a9b8d"
+  },
+  "id": "DcCULV885hDtdNIW",
+  "tags": []
+}
